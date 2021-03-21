@@ -55,15 +55,17 @@ Installing QuestDB on a Linux VM is easy. In the terminal shell opened by clicki
 
 In case of a successful start, you will see something like:
 
-     / _ \ _   _  ___  ___| |_|  _ \| __ )
-    | | | | | | |/ _ \/ __| __| | | |  _ \
-    | |_| | |_| |  __/\__ \ |_| |_| | |_) |
-     \__\_\\__,_|\___||___/\__|____/|____/
-                            www.questdb.io
-    JAVA: /usr/local/bin/questdb/questdb-5.0.6.1-rt-linux-amd64/bin/java
-    Created QuestDB ROOT directory: /root/.questdb
-    QuestDB server 5.0.6.1
-    Copyright (C) 2014-2021, all rights reserved.
+```
+    / _ \ _   _  ___  ___| |_|  _ \| __ )
+   | | | | | | |/ _ \/ __| __| | | |  _ \
+   | |_| | |_| |  __/\__ \ |_| |_| | |_) |
+    \__\_\\__,_|\___||___/\__|____/|____/
+                        www.questdb.io
+JAVA: /usr/local/bin/questdb/questdb-5.0.6.1-rt-linux-amd64/bin/java
+Created QuestDB ROOT directory: /root/.questdb
+QuestDB server 5.0.6.1
+Copyright (C) 2014-2021, all rights reserved.
+```
 
 To validate that the database is started for sure, you can execute `sudo /usr/local/bin/questdb/questdb-5.0.6.1-rt-linux-amd64/bin/questdb.sh status
 ` which will return the process ID (PID) of the running process.
@@ -87,9 +89,11 @@ If you try to open the interactive console again, you should see the loaded cons
 ![](./post/img/Screenshot-2021-03-20-at-18.05.55.png)
 As our first query, create the table in which the Cloud Function will write the anonymized data. To create the table run the following SQL statement:
 
-    CREATE TABLE
-    	purchases(buyer STRING, item_id INT, quantity INT, price INT, purchase_date TIMESTAMP)
-        timestamp(purchase_date);
+```sql
+CREATE TABLE
+    purchases(buyer STRING, item_id INT, quantity INT, price INT, purchase_date TIMESTAMP)
+    timestamp(purchase_date);
+```
 
 ### Create a Storage bucket
 
@@ -169,172 +173,185 @@ Let's start with the requirements. On the left-hand side, click on the `requirem
 
 Here we add the required packages to connect to Google Storage and QuestDB. Next, click on `main.py`, remove its whole content and start adding the following:
 
-    import csv
-    import hashlib
-    import json
-    import logging
-    import os
-    from dataclasses import dataclass
-    from datetime import datetime
-    from typing import List
-    
-    from google.cloud import storage
-    from sqlalchemy.sql import text
-    from sqlalchemy.engine import Connection, create_engine
-    
-    logger = logging.getLogger(__name__)
-    
-    # Create a database engine
-    engine = create_engine(os.getenv("DATABASE_URL"))
-    
-    # ...
+```python
+import csv
+import hashlib
+import json
+import logging
+import os
+from dataclasses import dataclass
+from datetime import datetime
+from typing import List
+
+from google.cloud import storage
+from sqlalchemy.sql import text
+from sqlalchemy.engine import Connection, create_engine
+
+logger = logging.getLogger(__name__)
+
+# Create a database engine
+engine = create_engine(os.getenv("DATABASE_URL"))
+
+# ...
+```
 
 As you may expect, we start with the imports, but we added two extra lines: one for the logger and one for configuring the database engine. The logger will be needed to log warnings and exceptions during the execution, while we will use the engine later to insert anonymized data into the database.
 
 To make our job easier later, we are going to add a data class, called `Record`. This data class will be used to store the parsed and anonymized CSV data for a line of the uploaded file.
 
-    # ...
+```python
+# ...
+
+@dataclass
+class Record:
+    buyer: str
+    item_id: int
+    quantity: int
+    price: int
+    purchase_date: datetime
     
-    @dataclass
-    class Record:
-        buyer: str
-        item_id: int
-        quantity: int
-        price: int
-        purchase_date: datetime
-        
-    # ...
+# ...
+```
 
 As we discussed, ETL jobs are validating the data that they receive as input. In our case, the function will be triggered if an object is created on the storage. This means any kind of object, like a CSV, PDF, TXT, PNG file, or even a directory is created, though we only want to execute the transformation on CSV files. To validate the incoming data, we write two simple validator functions:
 
-    # ...
-    
-    def is_event_valid(event: dict) -> bool:
-        """
-        Validate that the event has all the necessary attributes required for the
-        execution.
-        """
-    
-        attributes = event.keys()
-        required_parameters = ["bucket", "contentType", "name", "size"]
-    
-        return all(parameter in attributes for parameter in required_parameters)
-    
-    
-    def is_object_valid(event: dict) -> bool:
-        """
-        Validate that the finalized/created object is a CSV file and its size is
-        greater than zero.
-        """
-    
-        has_content = int(event["size"]) > 0
-        is_csv = event["contentType"] == "text/csv"
-    
-        return has_content and is_csv
-    
-    # ...
+```python
+# ...
+
+def is_event_valid(event: dict) -> bool:
+    """
+    Validate that the event has all the necessary attributes required for the
+    execution.
+    """
+
+    attributes = event.keys()
+    required_parameters = ["bucket", "contentType", "name", "size"]
+
+    return all(parameter in attributes for parameter in required_parameters)
+
+
+def is_object_valid(event: dict) -> bool:
+    """
+    Validate that the finalized/created object is a CSV file and its size is
+    greater than zero.
+    """
+
+    has_content = int(event["size"]) > 0
+    is_csv = event["contentType"] == "text/csv"
+
+    return has_content and is_csv
+
+# ...
+```
 
 The first function will validate that event has all the necessary parameters, while the second function checks that the object created and triggered the event is a CSV and has any content.
 
 The next function we create is used to get an object from the storage which, in our case, the file triggered the event:
 
-    # ...
-    
-    def get_content(bucket: storage.Bucket, file_path: str) -> str:
-        """
-        Get the blob from the bucket and return its content as a string.
-        """
-    
-        blob = bucket.get_blob(file_path)
-        return blob.download_as_string().decode("utf-8")
-    
-    # ...
+```python
+# ...
+
+def get_content(bucket: storage.Bucket, file_path: str) -> str:
+    """
+    Get the blob from the bucket and return its content as a string.
+    """
+
+    blob = bucket.get_blob(file_path)
+    return blob.download_as_string().decode("utf-8")
+
+# ...
+```
 
 Anonymizing the data, in this scenario, is relatively easy, though we need to ensure we can build statistics and visualizations later based on this data, so the anonymized parts should be consistent for a user. To achieve this, we will hash the buyer's email address, so it cannot be tracked back to the person owning the email, but we can use it for visualization:
 
-    # ...
-    
-    def anonymize_pii(row: List[str]) -> Record:
-        """
-        Unpack and anonymize data.
-        """
-    
-        email, item_id, quantity, price, purchase_date = row
-    
-        # Anonymize email address
-        hashed_email = hashlib.sha1(email.encode()).hexdigest()
-    
-        return Record(
-            buyer=hashed_email,
-            item_id=int(item_id),
-            quantity=int(quantity),
-            price=int(price),
-            purchase_date=purchase_date,
-        )
-    
-    # ...
+```python
+# ...
+
+def anonymize_pii(row: List[str]) -> Record:
+    """
+    Unpack and anonymize data.
+    """
+
+    email, item_id, quantity, price, purchase_date = row
+
+    # Anonymize email address
+    hashed_email = hashlib.sha1(email.encode()).hexdigest()
+
+    return Record(
+        buyer=hashed_email,
+        item_id=int(item_id),
+        quantity=int(quantity),
+        price=int(price),
+        purchase_date=purchase_date,
+    )
+
+# ...
+```
 
 So far, we have functions to validate the data, get the file's content which triggered the Cloud Function, we can anonymize the data, so the next thing we need to be able to do is loading the data. Until this point every function we wrote was simple, this isn't an exception:
 
-    # ...
-    
-    def write_to_db(conn: Connection, record: Record):
-        """
-        Write the records into the database.
-        """
-    
-        query = """
-        INSERT INTO purchases(buyer, item_id, quantity, price, purchase_date)
-        VALUES(:buyer, :item_id, :quantity, :price, to_timestamp(:purchase_date, 'yyyy-MM-ddTHH:mm:ss'));
-        """
-    
-        try:
-            conn.execute(text(query), **record.__dict__)
-        except Exception as exc:
-            # If an error occures, log the exception and continue
-            logger.exception("cannot write record", exc_info=exc)
-    
-    # ...
+```python
+# ...
+
+def write_to_db(conn: Connection, record: Record):
+    """
+    Write the records into the database.
+    """
+
+    query = """
+    INSERT INTO purchases(buyer, item_id, quantity, price, purchase_date)
+    VALUES(:buyer, :item_id, :quantity, :price, to_timestamp(:purchase_date, 'yyyy-MM-ddTHH:mm:ss'));
+    """
+
+    try:
+        conn.execute(text(query), **record.__dict__)
+    except Exception as exc:
+        # If an error occures, log the exception and continue
+        logger.exception("cannot write record", exc_info=exc)
+
+# ...
+```
 
 As you see, writing to the database is easy. We get the connection and the record we need to write into the database, prepare the query and execute it. In case of an exception, we don't want to block the whole processing, so we catch the exception, log it and let the script go on. If an exception happened, we can check it later and fix the script or load the data manually.
 
 The last bit is the glue code, which brings together these functions. Have a look at that too:
 
-    # ...
-    
-    def entrypoint(event: dict, context):
-        """
-        Triggered by a creation on a Cloud Storage bucket.
-        """
-    
-        # Check if the event has all the necessary parameters. In case any of the
-        # required parameters are missing, return early not to waste execution time.
-        if not is_event_valid(event):
-            logger.error("invalid event: %s", json.dumps(event))
-            return
-    
-        file_path = event["name"]
-    
-        # Check if the created object is valid or not. In case the object is invalid
-        # return early not to waste execution time.
-        if not is_object_valid(event):
-            logger.warning("invalid object: %s", file_path)
-            return
-    
-        storage_client = storage.Client()
-        bucket = storage_client.get_bucket(event["bucket"])
-    
-        data = get_content(bucket, file_path)
-        reader = csv.reader(data.splitlines())
-    
-        # Anonymize PII and filter out invalid records
-        records: List[Record] = filter(lambda r: r, [anonymize_pii(row) for row in reader])
-    
-        # Write the anonymized data to database
-        with engine.connect() as conn:
-            for record in records:
-                write_to_db(conn, record)
-    
+```python
+# ...
+
+def entrypoint(event: dict, context):
+    """
+    Triggered by a creation on a Cloud Storage bucket.
+    """
+
+    # Check if the event has all the necessary parameters. In case any of the
+    # required parameters are missing, return early not to waste execution time.
+    if not is_event_valid(event):
+        logger.error("invalid event: %s", json.dumps(event))
+        return
+
+    file_path = event["name"]
+
+    # Check if the created object is valid or not. In case the object is invalid
+    # return early not to waste execution time.
+    if not is_object_valid(event):
+        logger.warning("invalid object: %s", file_path)
+        return
+
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(event["bucket"])
+
+    data = get_content(bucket, file_path)
+    reader = csv.reader(data.splitlines())
+
+    # Anonymize PII and filter out invalid records
+    records: List[Record] = filter(lambda r: r, [anonymize_pii(row) for row in reader])
+
+    # Write the anonymized data to database
+    with engine.connect() as conn:
+        for record in records:
+            write_to_db(conn, record)
+``` 
 
 What we did here? First, we call the two validators to ensure it worth processing the data, and we get the file path from the event. After that we initialize the client used to connect to Google Storage, then we get the object's content, parse the CSV file, and anonymizing the content of it.
 
