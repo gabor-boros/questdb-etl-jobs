@@ -1,13 +1,3 @@
----
-title: ETL time-series data on Google Cloud Platform with QuestDB
-slug: etl-time-series-data-on-google-cloud-platform-with-questdb
-date_published: 1970-01-01T00:00:00.000Z
-date_updated: 2021-03-21T12:42:55.000Z
-tags: tutorial, questdb, python, gcp
-draft: true
-excerpt: In the world of big data, software developers and data analysts often have to write scripts or complex software collections to Extract, Transform and Load data into a data store for further analysis or strategic planning.
----
-
 In the world of big data, software developers and data analysts often have to write scripts or complex software collections to Extract, Transform and Load data into a data store for further analysis or strategic planning. This process is referenced as ETL which stands for the data transformation described above.
 
 ## What could we use ETL jobs for?
