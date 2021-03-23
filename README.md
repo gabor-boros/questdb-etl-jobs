@@ -43,14 +43,18 @@ After a short time, the new instance will be up and running. As soon as the inst
 
 Installing QuestDB on a Linux VM is easy. In the terminal shell opened by clicking "ssh" do the following:
 
-1. Run `curl -L -o questdb.tar.gz [https://github.com/questdb/questdb/releases/download/5.0.6.1/questdb-5.0.6.1-rt-linux-amd64.tar.gz](https://github.com/questdb/questdb/releases/download/5.0.6.1/questdb-5.0.6.1-rt-linux-amd64.tar.gz)` to download compressed binaries
-2. Create a directory for QuestDB by executing `sudo mkdir /usr/local/bin/questdb`
-3. Execute `sudo tar -xvf questdb.tar.gz -C /usr/local/bin/questdb` to extract the downloaded archive to the target location
-4. Start QuestDB by running `sudo /usr/local/bin/questdb/questdb-5.0.6.1-rt-linux-amd64/bin/questdb.sh start`
+```bash
+# download the latest binary and uncompress the contents
+curl -L -o questdb.tar.gz https://github.com/questdb/questdb/releases/download/5.0.6.1/questdb-5.0.6.1-rt-linux-amd64.tar.gz
+sudo mkdir /usr/local/bin/questdb && sudo tar -xvf questdb.tar.gz -C /usr/local/bin/questdb
 
-In case of a successful start, you will see something like:
-
+# Run QuestDB
+sudo /usr/local/bin/questdb/questdb-5.0.6.1-rt-linux-amd64/bin/questdb.sh start
 ```
+
+If QuestDB has started successfully, you will see the following:
+
+```txt
     / _ \ _   _  ___  ___| |_|  _ \| __ )
    | | | | | | |/ _ \/ __| __| | | |  _ \
    | |_| | |_| |  __/\__ \ |_| |_| | |_) |
@@ -62,8 +66,11 @@ QuestDB server 5.0.6.1
 Copyright (C) 2014-2021, all rights reserved.
 ```
 
-To validate that the database is started for sure, you can execute `sudo /usr/local/bin/questdb/questdb-5.0.6.1-rt-linux-amd64/bin/questdb.sh status
-` which will return the process ID (PID) of the running process.
+You can additionally execute the following command to return the process ID (PID) of QuestDB:
+
+```bash
+sudo /usr/local/bin/questdb/questdb-5.0.6.1-rt-linux-amd64/bin/questdb.sh status
+```
 
 ### Allow networking on the instance
 
