@@ -21,9 +21,9 @@ We won't be building a webshop or a data exporter for an existing webshop, but w
 
 In the following sections, we will set up the necessary components on GCP. Ensure the required APIs mentioned in the prerequisites are enabled, and that you have selected the GCP project in which you would like to create the tutorial resources.
 
-### Create a virtual machine for QuestDB
+### Create a Compute Engine instance for QuestDB
 
-First things first, we start with installing QuestDB on a virtual machine. To get started, navigate to the [VM instances console](https://console.cloud.google.com/compute/instances). Visiting this page for the first time will take a few moments to initialize. After the loading indicator has gone, start a new virtual machine:
+First things first, we start with installing QuestDB on a virtual machine. To get started, navigate to the [Compute Engine console](https://console.cloud.google.com/compute/instances). Visiting this page for the first time will take a few moments to initialize. After the loading indicator has gone, start a new virtual machine:
 
 1. Click on "create" and give the instance the name `questdb-vm`
 2. Select a region close to you
@@ -39,9 +39,9 @@ Make sure you note the "External IP" of the instance as we will need that later.
 
 After a short time, the new instance will be up and running. As soon as the instance is provisioned, we can initiate a remote session to install QuestDB by clicking **ssh** in the VM panel.
 
-### Install QuestDB on the VM
+### Install QuestDB on Compute Engine
 
-Installing QuestDB on a Linux VM is easy. In the terminal shell opened by clicking "ssh" do the following:
+Installing QuestDB on a Linux VM like Compute Engine is easy. In the terminal shell opened by clicking "ssh" do the following:
 
 ```bash
 # download the latest binary and uncompress the contents
