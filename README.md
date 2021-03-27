@@ -29,48 +29,16 @@ First things first, we start with installing QuestDB on a virtual machine. To ge
 2. Select a region close to you
 3. Select the first generation "N1" series
 4. Choose the `f1-micro` machine type - in a production environment you would choose a more performant instance, but for tutorial purposes, this is enough
-5. In the "Firewall" section, click on "Management, security, disks, networking, sole tenancy"
-6. In the newly panel, select "Networking" and add `questdb` as a "Network tag"
-7. Leave all other settings with their defaults, and click on "create"
+5. In the "Container section, check "Deploy a container image to this VM instance", and type "questdb/questdb:latest" for the "Container image"
+6. In the "Firewall" section, click on "Management, security, disks, networking, sole tenancy"
+7. In the newly appeared panel, select "Networking" and add `questdb` as a "Network tag"
+8. Leave all other settings with their defaults, and click on "create"
 
 Make sure you note the "External IP" of the instance as we will need that later.
 
 ![GoogleCloud Platform showing active compute engine instances](./post/img/Screenshot-2021-03-20-at-17.18.41.png)
 
 After a short time, the new instance will be up and running. As soon as the instance is provisioned, we can initiate a remote session to install QuestDB by clicking **ssh** in the VM panel.
-
-### Install QuestDB on Compute Engine
-
-Installing QuestDB on a Linux VM like Compute Engine is easy. In the terminal shell opened by clicking "ssh" do the following:
-
-```bash
-# download the latest binary and uncompress the contents
-curl -L -o questdb.tar.gz https://github.com/questdb/questdb/releases/download/5.0.6.1/questdb-5.0.6.1-rt-linux-amd64.tar.gz
-sudo mkdir /usr/local/bin/questdb && sudo tar -xvf questdb.tar.gz -C /usr/local/bin/questdb
-
-# Run QuestDB
-sudo /usr/local/bin/questdb/questdb-5.0.6.1-rt-linux-amd64/bin/questdb.sh start
-```
-
-If QuestDB has started successfully, you will see the following:
-
-```txt
-    / _ \ _   _  ___  ___| |_|  _ \| __ )
-   | | | | | | |/ _ \/ __| __| | | |  _ \
-   | |_| | |_| |  __/\__ \ |_| |_| | |_) |
-    \__\_\\__,_|\___||___/\__|____/|____/
-                        www.questdb.io
-JAVA: /usr/local/bin/questdb/questdb-5.0.6.1-rt-linux-amd64/bin/java
-Created QuestDB ROOT directory: /root/.questdb
-QuestDB server 5.0.6.1
-Copyright (C) 2014-2021, all rights reserved.
-```
-
-You can additionally execute the following command to return the process ID (PID) of QuestDB:
-
-```bash
-sudo /usr/local/bin/questdb/questdb-5.0.6.1-rt-linux-amd64/bin/questdb.sh status
-```
 
 ### Allow networking on the instance
 
